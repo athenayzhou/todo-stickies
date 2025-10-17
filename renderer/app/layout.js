@@ -1,7 +1,7 @@
 import '../styles/globals.css';
 
 export const metadata = {
-  title: 'My App',
+  title: 'to do stickies',
   description: 'Electron + Next.js + Tailwind',
 };
 
