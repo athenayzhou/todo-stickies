@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import TaskItem from "./components/taskItem";
 import type { Task } from "./lib/types";
-import { DEFAULT_TASK_SIZE } from "./lib/constants";
+import { DEFAULT_TASK_SIZE, TASK_COLOR_OPTIONS } from "./lib/constants";
 
 export default function Page() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -16,6 +16,7 @@ export default function Page() {
       y,
       width: DEFAULT_TASK_SIZE.width,
       height: DEFAULT_TASK_SIZE.height,
+      backgroundColor: TASK_COLOR_OPTIONS[0],
       isEditing: true,
     };
     setTasks((prev) => [...prev, newTask]);
@@ -25,11 +26,6 @@ export default function Page() {
     setTasks((prev) => 
       prev.map((task) => (task.id === id ? { ...task, ...update } : task))
     );
-
-  // const handleDrag = (id:string, dx:number, dy:number) => {
-  //   const task = tasks.find((t) => t.id === id);
-  //   if(task) updateTask(id, {x: task.x + dx, y: task.y + dy});
-  // };
 
   const deleteTask = (id:string) => {
     setTasks((prev) => prev.filter((task) => task.id !== id));
@@ -60,7 +56,6 @@ export default function Page() {
         <TaskItem
           key={task.id}
           task={task}
-          // handleDrag={handleDrag}
           updateTask={updateTask}
           deleteTask={deleteTask}
         />

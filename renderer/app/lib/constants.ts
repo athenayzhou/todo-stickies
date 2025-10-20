@@ -3,4 +3,4 @@ export const DEFAULT_TASK_SIZE = {
     height: 120,
 };
 
-export const TASK_COLORS = ["#fde68a", "#a7f3d0", "#bfdbfe"];
+export const TASK_COLOR_OPTIONS = ["#fde68a", "#f7d4d4", "#bfdbfe", "#d4f7d4"];

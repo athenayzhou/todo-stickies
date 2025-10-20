@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Task } from "../lib/types";
-import { DEFAULT_TASK_SIZE } from "../lib/constants";
+import { DEFAULT_TASK_SIZE , TASK_COLOR_OPTIONS } from "../lib/constants";
 
 type TaskItemProps = {
     task: Task;
@@ -18,11 +18,16 @@ export default function TaskItem({
 
   const isDraggingRef = useRef(false);
   const isResizingRef = useRef(false);
-
   const dragStart = useRef<{ x: number; y: number } | null>(null);
   const resizeStart = useRef<{ x: number; y: number } | null>(null);
 
   const [isHovering, setIsHovering] = useState(false);
+  const [showColor, setShowColor] = useState(false);
+
+  const colorSelect = (color: string) => {
+    updateTask(task.id, { backgroundColor: color });
+    setShowColor(false);
+  }
 
   const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
     if(!task.isEditing){
@@ -91,6 +96,7 @@ export default function TaskItem({
         height: size.height,
         borderRadius: 4,
         border: "1px solid #ddd",
+        backgroundColor: task.backgroundColor,
         cursor: task.isEditing ? "text" : isResizingRef.current ? "se-resize" : "grab",
         userSelect: "none",
         transition: "box-shadow 0.2s",
@@ -98,7 +104,10 @@ export default function TaskItem({
       }}
       onMouseDown={startDrag}
       onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseLeave={() => {
+        setIsHovering(false);
+        setShowColor(false);
+      }}
     >
       {task.isEditing ? (
         <input
@@ -140,18 +149,62 @@ export default function TaskItem({
             right: 4,
             display: "flex",
             gap: 10,
+            border: "2px solid #ccc"
           }}
         >
           <button
             className="delete-handle"
             onClick={() => deleteTask(task.id)}
           >
-            🗑️
+            X
+          </button>
+          <button
+            className="color-handle"
+            onClick={() => setShowColor((prev) => !prev)}
+          >
+            O
           </button>
           <div
-            className="resize-handle"
+            style={{
+              width: "20px",
+              height: "17px",
+              background: "rgba(0,0,0,0.2)",
+              borderRadius:"2px",
+            }}
+            // className="resize-handle"
             onMouseDown={startResize}
           />
+          
+          {showColor && (
+            <div
+              style={{
+                position: "absolute",
+                top: 24,
+                right: 0,
+                display: "flex",
+                gap: 6,
+                padding: 4,
+                background:"#fff",
+                border: "1px solid #ccc",
+                borderRadius: 4,
+              }}
+            >
+                {TASK_COLOR_OPTIONS.map((color) => (
+                  <div 
+                    key={color}
+                    onClick={() => colorSelect(color)}
+                    style={{
+                      width:20,
+                      height:20,
+                      borderRadius: "50%",
+                      backgroundColor: color,
+                      cursor: "pointer",
+                      border: "1px solid #aaa",
+                    }}
+                  />
+                ))}
+              </div>
+          )}
         </div>
       )}
       

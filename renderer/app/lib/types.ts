@@ -5,5 +5,6 @@ export type Task = {
     y: number;
     width?: number;
     height?: number;
+    backgroundColor: string;
     isEditing: boolean;
   };
