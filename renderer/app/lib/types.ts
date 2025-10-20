@@ -3,8 +3,7 @@ export type Task = {
     content: string;
     x: number;
     y: number;
+    width?: number;
+    height?: number;
     isEditing: boolean;
-    priority: "low" | "medium" | "high";
-    completed: boolean;
-    height?: number
   };

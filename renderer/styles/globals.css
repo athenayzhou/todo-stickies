@@ -9,3 +9,14 @@
     background-color: #fff;
     overflow: hidden;
 }
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    cursor: se-resize;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}

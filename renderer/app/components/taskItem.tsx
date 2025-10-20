@@ -1,57 +1,80 @@
-import React, { useState, useRef } from "react";
-import type { Task } from "../types/task";
+import React, { useState, useRef, useEffect } from "react";
+import type { Task } from "../lib/types";
+import { DEFAULT_TASK_SIZE } from "../lib/constants";
 
 type TaskItemProps = {
     task: Task;
-    taskDimensions: { width: number; height: number; padding: number; };
-    priorityStyles: Record<Task["priority"], React.CSSProperties>;
-    handleSinglePress: (id: string) => void;
-    handleDoublePress: (id: string) => void;
-    handleLongPress: (id: string) => void;
-    handleDrag: (id: string, dx: number, dy: number) => void;
     updateTask: (id: string, update: Partial<Task>) => void;
     deleteTask: (id: string) => void;
 }
 
 export default function TaskItem({
   task,
-  taskDimensions,
-  priorityStyles,
-  handleSinglePress,
-  handleDoublePress,
-  handleLongPress,
-  handleDrag,
   updateTask,
   deleteTask
 } : TaskItemProps) {
+  const [position, setPosition] = useState({ x: task.x, y: task.y });
+  const [size, setSize] = useState({ width: task.width || DEFAULT_TASK_SIZE.width, height: task.height || DEFAULT_TASK_SIZE.height });
 
-  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const isResizingRef = useRef(false);
+
   const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const resizeStart = useRef<{ x: number; y: number } | null>(null);
 
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const [isHovering, setIsHovering] = useState(false);
+
+  const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
     if(!task.isEditing){
       dragStart.current = { x:e.clientX, y:e.clientY };
-      setIsDragging(true);
-      //handleSinglePress(task.id);
+      isDraggingRef.current = true;
+      e.stopPropagation();
     }
-  }
-  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if(isDragging && dragStart.current){
+  };
+  const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    resizeStart.current = { x: e.clientX, y: e.clientY };
+    isResizingRef.current = true;
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    e.preventDefault();
+    if(isDraggingRef.current && dragStart.current){
       const dx = e.clientX - dragStart.current.x;
       const dy = e.clientY - dragStart.current.y;
-      handleDrag(task.id, dx, dy);
+      setPosition(prev => ({ 
+        x: prev.x + dx, 
+        y: prev.y + dy,
+      }));
       dragStart.current = { x:e.clientX, y:e.clientY };
+    } else if (isResizingRef.current && resizeStart.current) {
+      const dx = e.clientX - resizeStart.current.x;
+      const dy = e.clientY - resizeStart.current.y;
+      setSize(prev => ({
+        width: Math.max(DEFAULT_TASK_SIZE.width, prev.width + dx),
+        height: Math.max(DEFAULT_TASK_SIZE.height, prev.height + dy),
+      }));
+      resizeStart.current = { x: e.clientX, y: e.clientY };
     }
   };
   const onMouseUp = () => {
-    setIsDragging(false);
+    if(isDraggingRef.current || isResizingRef.current){
+      updateTask(task.id, { x: position.x, y: position.y, width: size.width, height: size.height });
+    };
+    isDraggingRef.current = false;
+    isResizingRef.current = false;
     dragStart.current = null;
+    resizeStart.current = null;
   }
 
-  const backgroundStyle = task.completed
-    ? { backgroundColor: "#d3d3d3" }
-    // : priorityStyles[task.priority];
-    : { backgroundColor: "#d3d3d3" }
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  },[position, size]);
 
   const handleBlur = () => {
     if(!task.content.trim()) deleteTask(task.id);
@@ -62,24 +85,20 @@ export default function TaskItem({
     <div
       style={{
         position: "absolute",
-        top: task.y,
-        left: task.x,
-        width: taskDimensions.width,
-        padding: taskDimensions.padding,
+        left: position.x,
+        top: position.y,
+        width: size.width,
+        height: size.height,
         borderRadius: 4,
         border: "1px solid #ddd",
-        backgroundColor: backgroundStyle.backgroundColor,
-        cursor: task.isEditing ? "text" : "grab",
+        cursor: task.isEditing ? "text" : isResizingRef.current ? "se-resize" : "grab",
         userSelect: "none",
+        transition: "box-shadow 0.2s",
+        boxShadow: isHovering? "0 2px 6px rgba(0,0,0,0.15)" : "none",
       }}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onDoubleClick={() => handleDoublePress(task.id)}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        // handleLongPress(task.id);
-      }}
+      onMouseDown={startDrag}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
       {task.isEditing ? (
         <input
@@ -95,6 +114,7 @@ export default function TaskItem({
             }
           }}
           style={{
+            userSelect:"text",
             width:"100%",
             borderBottom: "1px, solid #ccc",
             fontSize: 16,
@@ -104,10 +124,37 @@ export default function TaskItem({
       ) : (
         <p 
           onDoubleClick = {()=> updateTask(task.id, { isEditing: true })}
+          style={{
+            userSelect:"text",
+          }}
         >
           {task.content}
         </p>
       )}
+
+      {isHovering && (
+        <div
+          style={{
+            position:"absolute",
+            bottom: 4,
+            right: 4,
+            display: "flex",
+            gap: 10,
+          }}
+        >
+          <button
+            className="delete-handle"
+            onClick={() => deleteTask(task.id)}
+          >
+            🗑️
+          </button>
+          <div
+            className="resize-handle"
+            onMouseDown={startResize}
+          />
+        </div>
+      )}
+      
     </div>
   )
 
