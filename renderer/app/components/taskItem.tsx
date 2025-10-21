@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import type { Task } from "../lib/types";
 import { DEFAULT_TASK_SIZE , TASK_COLOR_OPTIONS } from "../lib/constants";
 
+import { TiDelete } from "react-icons/ti"; 
+
 type TaskItemProps = {
     task: Task;
     updateTask: (id: string, update: Partial<Task>) => void;
@@ -16,13 +18,13 @@ export default function TaskItem({
   const [position, setPosition] = useState({ x: task.x, y: task.y });
   const [size, setSize] = useState({ width: task.width || DEFAULT_TASK_SIZE.width, height: task.height || DEFAULT_TASK_SIZE.height });
 
+  const [isHovering, setIsHovering] = useState(false);
+  const [showColor, setShowColor] = useState(false);
+
   const isDraggingRef = useRef(false);
   const isResizingRef = useRef(false);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
   const resizeStart = useRef<{ x: number; y: number } | null>(null);
-
-  const [isHovering, setIsHovering] = useState(false);
-  const [showColor, setShowColor] = useState(false);
 
   const colorSelect = (color: string) => {
     updateTask(task.id, { backgroundColor: color });
@@ -42,8 +44,18 @@ export default function TaskItem({
     isResizingRef.current = true;
   };
 
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    startDrag(e)
+    if( (isDraggingRef.current || isResizingRef.current )){
+      updateTask(task.id, { isSelected: true });
+    } else {
+      if(task.isSelected) updateTask(task.id, { isSelected: false})
+      else updateTask(task.id, { isSelected: true})
+    }
+  }
   const onMouseMove = (e: MouseEvent) => {
     e.preventDefault();
+
     if(isDraggingRef.current && dragStart.current){
       const dx = e.clientX - dragStart.current.x;
       const dy = e.clientY - dragStart.current.y;
@@ -52,6 +64,7 @@ export default function TaskItem({
         y: prev.y + dy,
       }));
       dragStart.current = { x:e.clientX, y:e.clientY };
+
     } else if (isResizingRef.current && resizeStart.current) {
       const dx = e.clientX - resizeStart.current.x;
       const dy = e.clientY - resizeStart.current.y;
@@ -62,10 +75,20 @@ export default function TaskItem({
       resizeStart.current = { x: e.clientX, y: e.clientY };
     }
   };
-  const onMouseUp = () => {
+  const onMouseUp = (e: MouseEvent) => {
+    if((e.target as HTMLElement).closest('.controls')) return;
     if(isDraggingRef.current || isResizingRef.current){
       updateTask(task.id, { x: position.x, y: position.y, width: size.width, height: size.height });
-    };
+    } 
+
+    // if(isDraggingRef.current || isResizingRef.current){
+    //   if(!isSelected) updateTask(task.id, { isSelected: true })
+    //   updateTask(task.id, { x: position.x, y: position.y, width: size.width, height: size.height})
+    //   } else {
+    //     setIsSelected(prev => !prev)
+    //   }
+    
+
     isDraggingRef.current = false;
     isResizingRef.current = false;
     dragStart.current = null;
@@ -73,36 +96,35 @@ export default function TaskItem({
   }
 
   useEffect(() => {
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
+    const handleMove = (e: MouseEvent) => onMouseMove(e);
+    const handleUp = (e: MouseEvent) => onMouseUp(e);
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
     return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
     };
-  },[position, size]);
+  },[]);
 
   const handleBlur = () => {
-    if(!task.content.trim()) deleteTask(task.id);
-    else updateTask(task.id, { isEditing: false });
+    if(!task.content.trim()){
+      deleteTask(task.id);
+    } else {
+      updateTask(task.id, { isEditing: false, isSelected: false });
+    }
   };
 
   return(
     <div
+      className={`taskItem ${isDraggingRef.current ? "dragging" : ""} ${isResizingRef.current ? "resizing" : ""} ${isHovering ? "hovering" : ""} ${task.isSelected ? "selecting" : ""}`}
       style={{
-        position: "absolute",
         left: position.x,
         top: position.y,
         width: size.width,
         height: size.height,
-        borderRadius: 4,
-        border: "1px solid #ddd",
         backgroundColor: task.backgroundColor,
-        cursor: task.isEditing ? "text" : isResizingRef.current ? "se-resize" : "grab",
-        userSelect: "none",
-        transition: "box-shadow 0.2s",
-        boxShadow: isHovering? "0 2px 6px rgba(0,0,0,0.15)" : "none",
       }}
-      onMouseDown={startDrag}
+      onMouseDown={onMouseDown}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => {
         setIsHovering(false);
@@ -122,85 +144,44 @@ export default function TaskItem({
               handleBlur();
             }
           }}
-          style={{
-            userSelect:"text",
-            width:"100%",
-            borderBottom: "1px, solid #ccc",
-            fontSize: 16,
-            padding: 2,
-          }}
         />
       ) : (
-        <p 
-          onDoubleClick = {()=> updateTask(task.id, { isEditing: true })}
-          style={{
-            userSelect:"text",
-          }}
-        >
+        <p onDoubleClick = {()=> updateTask(task.id, { isEditing: true, isSelected:true })}>
           {task.content}
         </p>
       )}
 
       {isHovering && (
-        <div
-          style={{
-            position:"absolute",
-            bottom: 4,
-            right: 4,
-            display: "flex",
-            gap: 10,
-            border: "2px solid #ccc"
-          }}
-        >
+        <div className="controls">
           <button
-            className="delete-handle"
+            // className="deleteHandle"
             onClick={() => deleteTask(task.id)}
           >
-            X
+            <TiDelete />
           </button>
           <button
-            className="color-handle"
+            // className="colorHandle"
             onClick={() => setShowColor((prev) => !prev)}
           >
-            O
+            <div
+              className="colorHandle"
+              style={{
+                backgroundColor: task.backgroundColor,
+              }}
+              />
           </button>
-          <div
-            style={{
-              width: "20px",
-              height: "17px",
-              background: "rgba(0,0,0,0.2)",
-              borderRadius:"2px",
-            }}
-            // className="resize-handle"
-            onMouseDown={startResize}
-          />
+          <div className="resizeHandle" onMouseDown={startResize} />
           
           {showColor && (
-            <div
-              style={{
-                position: "absolute",
-                top: 24,
-                right: 0,
-                display: "flex",
-                gap: 6,
-                padding: 4,
-                background:"#fff",
-                border: "1px solid #ccc",
-                borderRadius: 4,
-              }}
-            >
+            <div className="colorOptions" >
                 {TASK_COLOR_OPTIONS.map((color) => (
-                  <div 
-                    key={color}
-                    onClick={() => colorSelect(color)}
+                  <div
+                    key={color}  
+                    className="colorOption"
                     style={{
-                      width:20,
-                      height:20,
-                      borderRadius: "50%",
                       backgroundColor: color,
-                      cursor: "pointer",
-                      border: "1px solid #aaa",
                     }}
+                    onClick={() => colorSelect(color)} 
                   />
                 ))}
               </div>

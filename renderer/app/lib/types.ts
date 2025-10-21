@@ -7,4 +7,6 @@ export type Task = {
     height?: number;
     backgroundColor: string;
     isEditing: boolean;
+    isSelected: boolean;
+    // only?: boolean;
   };

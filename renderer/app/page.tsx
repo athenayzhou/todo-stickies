@@ -4,9 +4,11 @@ import React, { useState } from "react";
 import TaskItem from "./components/taskItem";
 import type { Task } from "./lib/types";
 import { DEFAULT_TASK_SIZE, TASK_COLOR_OPTIONS } from "./lib/constants";
+import { isOutside } from "./lib/taskUtils";
 
 export default function Page() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
   const addTask = (x: number, y: number) => {
     const newTask: Task = {
@@ -18,39 +20,43 @@ export default function Page() {
       height: DEFAULT_TASK_SIZE.height,
       backgroundColor: TASK_COLOR_OPTIONS[0],
       isEditing: true,
+      isSelected: true,
     };
     setTasks((prev) => [...prev, newTask]);
   };
 
-  const updateTask = (id:string, update:Partial<Task>) => 
+  const updateTask = (id:string, update:Partial<Task>) => {
     setTasks((prev) => 
-      prev.map((task) => (task.id === id ? { ...task, ...update } : task))
+      prev.map((t) => (t.id === id ? { ...t, ...update } : t))
     );
-
+  }
   const deleteTask = (id:string) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const outside = tasks.every(
-      (task) => 
-        x < task.x ||
-        x > task.x + (task.width || DEFAULT_TASK_SIZE.width) ||
-        y < task.y ||
-        y > task.y + (task.height || DEFAULT_TASK_SIZE.height)
-    );
-    if(outside) addTask(x,y)
+  const deselectAll = () => {
+    setSelectedTasks([]);
+    setTasks((prev) => prev.map((t) => ({...t, isSelected: false})))
+  }
 
+  const handleClick = (e: React.MouseEvent) => {
+    if(isOutside(e, tasks)){
+      deselectAll();
+    }
+  }
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if(isOutside(e, tasks)){
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      addTask(e.clientX - rect.left, e.clientY - rect.top);
+    }
   };
 
   return (
     <div
       className="relative w-full h-screen bg-white overflow-hidden"
-      onDoubleClick={handleCanvasClick}
-      onClick={(e)=> e.stopPropagation()}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
     >
       {tasks.map((task) => (
         <TaskItem
@@ -60,6 +66,9 @@ export default function Page() {
           deleteTask={deleteTask}
         />
       ))}
+
+      {/* {selectedTasks.length > 0 && (
+      )} */}
     </div>
   )
 

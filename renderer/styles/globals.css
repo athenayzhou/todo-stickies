@@ -10,13 +10,76 @@
     overflow: hidden;
 }
 
-.resize-handle {
+.taskItem {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 12px;
-    height: 12px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    user-select: none;
+    transition: box-shadow 0.2s;
+}
+.taskItem.dragging {
+    cursor: grab;
+}
+.taskItem.resizing {
     cursor: se-resize;
+}
+.taskItem.hovering {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.taskItem.selecting {
+    border: 5px solid #931313;
+}
+.taskItem input {
+    width: 95%;
+    border-bottom: 1px solid #ccc;
+    font-size: 16px;
+    user-select: text;
+}
+.taskItem p {
+    user-select: text;
+    padding: 5px 20px;
+    border: 1px solid #ccc;
+}
+
+.controls {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    display: flex;
+    gap: 10px;
+    border: 2px solid #ccc;
+}
+
+.colorHandle{
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid #aaa;
+}
+.resizeHandle {
+    width: 20px;
+    height: 17px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 2px;
+    cursor: se-resize;
+}
+
+.colorOptions {
+    position: absolute;
+    top: 24px;
+    right: 0;
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.colorOption {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid #aaa;
 }
