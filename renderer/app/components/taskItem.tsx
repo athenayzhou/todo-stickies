@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Task } from "../lib/types";
-import { DEFAULT_TASK_SIZE , TASK_COLOR_OPTIONS } from "../lib/constants";
-
-import { TiDelete } from "react-icons/ti"; 
+import { DEFAULT_TASK_SIZE, DRAG_THRESHOLD } from "../lib/constants";
 
 type TaskItemProps = {
-    task: Task;
-    updateTask: (id: string, update: Partial<Task>) => void;
-    deleteTask: (id: string) => void;
+  task: Task;
+  updateTask: (id: string, update: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
 }
 
 export default function TaskItem({
@@ -17,55 +15,32 @@ export default function TaskItem({
 } : TaskItemProps) {
   const [position, setPosition] = useState({ x: task.x, y: task.y });
   const [size, setSize] = useState({ width: task.width || DEFAULT_TASK_SIZE.width, height: task.height || DEFAULT_TASK_SIZE.height });
-
   const [isHovering, setIsHovering] = useState(false);
-  const [showColor, setShowColor] = useState(false);
 
+  const isSelectedRef = useRef(task.isSelected);
   const isDraggingRef = useRef(false);
   const isResizingRef = useRef(false);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
   const resizeStart = useRef<{ x: number; y: number } | null>(null);
 
-  const colorSelect = (color: string) => {
-    updateTask(task.id, { backgroundColor: color });
-    setShowColor(false);
-  }
-
   const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
-    if(!task.isEditing){
-      dragStart.current = { x:e.clientX, y:e.clientY };
-      isDraggingRef.current = true;
-      e.stopPropagation();
-    }
+    if(task.isEditing) return;
+    dragStart.current = { x:e.clientX, y:e.clientY };
+    isDraggingRef.current = false;
+    isResizingRef.current = false;
+    e.stopPropagation();
   };
+  
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     resizeStart.current = { x: e.clientX, y: e.clientY };
     isResizingRef.current = true;
+    updateTask(task.id, { isSelected: true })
   };
 
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    startDrag(e)
-    if( (isDraggingRef.current || isResizingRef.current )){
-      updateTask(task.id, { isSelected: true });
-    } else {
-      if(task.isSelected) updateTask(task.id, { isSelected: false})
-      else updateTask(task.id, { isSelected: true})
-    }
-  }
   const onMouseMove = (e: MouseEvent) => {
     e.preventDefault();
-
-    if(isDraggingRef.current && dragStart.current){
-      const dx = e.clientX - dragStart.current.x;
-      const dy = e.clientY - dragStart.current.y;
-      setPosition(prev => ({ 
-        x: prev.x + dx, 
-        y: prev.y + dy,
-      }));
-      dragStart.current = { x:e.clientX, y:e.clientY };
-
-    } else if (isResizingRef.current && resizeStart.current) {
+    if (resizeStart.current && isResizingRef.current) {
       const dx = e.clientX - resizeStart.current.x;
       const dy = e.clientY - resizeStart.current.y;
       setSize(prev => ({
@@ -73,27 +48,49 @@ export default function TaskItem({
         height: Math.max(DEFAULT_TASK_SIZE.height, prev.height + dy),
       }));
       resizeStart.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
+
+    if (!dragStart.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    if (!isDraggingRef.current && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+      isDraggingRef.current = true;
+      if(!isSelectedRef.current){
+        updateTask(task.id, { isSelected:true });
+        isSelectedRef.current = true;
+      }
+    }
+    if (isDraggingRef.current) {
+      setPosition(prev => ({
+        x: prev.x + dx,
+        y: prev.y + dy,
+      }));
+      dragStart.current = { x: e.clientX, y: e.clientY };
     }
   };
+
   const onMouseUp = (e: MouseEvent) => {
-    if((e.target as HTMLElement).closest('.controls')) return;
-    if(isDraggingRef.current || isResizingRef.current){
-      updateTask(task.id, { x: position.x, y: position.y, width: size.width, height: size.height });
-    } 
-
-    // if(isDraggingRef.current || isResizingRef.current){
-    //   if(!isSelected) updateTask(task.id, { isSelected: true })
-    //   updateTask(task.id, { x: position.x, y: position.y, width: size.width, height: size.height})
-    //   } else {
-    //     setIsSelected(prev => !prev)
-    //   }
-    
-
+    if (dragStart.current && !isDraggingRef.current && !isResizingRef.current) {
+      updateTask(task.id, { isSelected: !isSelectedRef.current });
+    }
+    if (isDraggingRef.current || isResizingRef.current) {
+      updateTask(task.id, {
+        x: position.x,
+        y: position.y,
+        width: size.width,
+        height: size.height,
+      });
+    }
     isDraggingRef.current = false;
     isResizingRef.current = false;
     dragStart.current = null;
     resizeStart.current = null;
-  }
+  };
+
+  useEffect(() => {
+    isSelectedRef.current = task.isSelected;
+  }, [task.isSelected]);
 
   useEffect(() => {
     const handleMove = (e: MouseEvent) => onMouseMove(e);
@@ -124,12 +121,9 @@ export default function TaskItem({
         height: size.height,
         backgroundColor: task.backgroundColor,
       }}
-      onMouseDown={onMouseDown}
+      onMouseDown={startDrag}
       onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => {
-        setIsHovering(false);
-        setShowColor(false);
-      }}
+      onMouseLeave={() => setIsHovering(false)}
     >
       {task.isEditing ? (
         <input
@@ -150,46 +144,11 @@ export default function TaskItem({
           {task.content}
         </p>
       )}
-
       {isHovering && (
         <div className="controls">
-          <button
-            // className="deleteHandle"
-            onClick={() => deleteTask(task.id)}
-          >
-            <TiDelete />
-          </button>
-          <button
-            // className="colorHandle"
-            onClick={() => setShowColor((prev) => !prev)}
-          >
-            <div
-              className="colorHandle"
-              style={{
-                backgroundColor: task.backgroundColor,
-              }}
-              />
-          </button>
           <div className="resizeHandle" onMouseDown={startResize} />
-          
-          {showColor && (
-            <div className="colorOptions" >
-                {TASK_COLOR_OPTIONS.map((color) => (
-                  <div
-                    key={color}  
-                    className="colorOption"
-                    style={{
-                      backgroundColor: color,
-                    }}
-                    onClick={() => colorSelect(color)} 
-                  />
-                ))}
-              </div>
-          )}
-        </div>
+          </div>
       )}
-      
     </div>
   )
-
 }

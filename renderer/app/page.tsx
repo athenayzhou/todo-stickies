@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import ToolBar from "./components/toolBar";
 import TaskItem from "./components/taskItem";
 import type { Task } from "./lib/types";
 import { DEFAULT_TASK_SIZE, TASK_COLOR_OPTIONS } from "./lib/constants";
@@ -8,7 +9,6 @@ import { isOutside } from "./lib/taskUtils";
 
 export default function Page() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
   const addTask = (x: number, y: number) => {
     const newTask: Task = {
@@ -27,30 +27,42 @@ export default function Page() {
 
   const updateTask = (id:string, update:Partial<Task>) => {
     setTasks((prev) => 
-      prev.map((t) => (t.id === id ? { ...t, ...update } : t))
-    );
+      prev.map((t) => {
+        if(t.id === id) return { ...t, ...update };
+        if (update.isEditing) return { ...t, isSelected: false };
+      return t;
+    })
+    )
   }
   const deleteTask = (id:string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
   const deselectAll = () => {
-    setSelectedTasks([]);
     setTasks((prev) => prev.map((t) => ({...t, isSelected: false})))
   }
-
   const handleClick = (e: React.MouseEvent) => {
     if(isOutside(e, tasks)){
       deselectAll();
     }
   }
-
   const handleDoubleClick = (e: React.MouseEvent) => {
     if(isOutside(e, tasks)){
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       addTask(e.clientX - rect.left, e.clientY - rect.top);
     }
   };
+
+  const deleteSelected = () => {
+    setTasks((prev) => prev.filter((t) => !t.isSelected));
+  }
+  const colorChangeSelected = (color: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.isSelected ? { ...t, backgroundColor: color } : t))
+    );
+  };
+
+  const selectedTasks = tasks.filter((t) => t.isSelected);
 
   return (
     <div
@@ -67,8 +79,13 @@ export default function Page() {
         />
       ))}
 
-      {/* {selectedTasks.length > 0 && (
-      )} */}
+      {selectedTasks.length > 0 && (
+        <ToolBar
+          onDelete={deleteSelected}
+          onColorChange={colorChangeSelected}
+          currentColor={selectedTasks[0].backgroundColor}
+        />
+      )}
     </div>
   )
 
