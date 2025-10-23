@@ -23,13 +23,13 @@ export default function colorControls({
   }
 
   return (
-    <div className="flex gap-10 relative">
+    <div className="flex gap-8 relative">
         {colorOptions.map((color) => (
             <button
                 key={color}
                 onClick={() => onSelect(color)}
                 className={`
-                    w-7 h-7 rounded-full border-2 gap-8
+                    w-7 h-7 rounded-full border-2 gap-2
                     ${currentColor === color ? "border-black" : "border-transparent"}
                     focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-black    
                 `}

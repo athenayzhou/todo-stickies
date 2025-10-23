@@ -61,7 +61,7 @@ export default function ToolBar({
 
   return (
     <div 
-      className="toolBar flex items-center gap-10 p-2 bg-white border rounded shadow-lg absolute z-10 cursor-pointer min-w-[300px]"
+      className="toolBar flex items-center gap-18 p-2 bg-white border rounded shadow-lg absolute z-10 cursor-pointer min-w-[300px]"
       style={{
         left: position.x,
         top: position.y,

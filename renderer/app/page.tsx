@@ -87,7 +87,7 @@ export default function Page() {
 
   return (
     <div
-      className="relative w-full h-screen bg-white overflow-hidden"
+      className="canvas relative w-full h-screen bg-white overflow-hidden"
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
