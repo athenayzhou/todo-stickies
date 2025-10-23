@@ -115,7 +115,12 @@ export default function Page() {
           onDelete={deleteSelected}
         />
       )}
+
+      <div class="flex gap-8 bg-gray-100 p-4">
+  <button class="bg-blue-500 text-white px-4 py-2 rounded">Button 1</button>
+  <button class="bg-blue-500 text-white px-4 py-2 rounded">Button 2</button>
+  <button class="bg-blue-500 text-white px-4 py-2 rounded">Button 3</button>
+</div>
     </div>
   )
-
 }

@@ -129,7 +129,14 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
 
   return(
     <div
-      className={`taskItem ${isDraggingRef.current ? "dragging" : ""} ${isResizingRef.current ? "resizing" : ""} ${isHovering ? "hovering" : ""} ${task.isSelected ? "selecting" : ""}`}
+      className={`
+        taskItem
+        absolute p-2 rounded-lg shadow cursor-pointer select-none
+        ${task.isSelected ? "selecting" : ""}
+        ${isDraggingRef.current ? "dragging opacity-80" : ""} 
+        ${isResizingRef.current ? "resizing" : ""} 
+        ${isHovering ? "hovering ring-1 ring-gray-300" : ""} 
+        `}
       style={{
         left: position.x,
         top: position.y,
@@ -144,6 +151,7 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
       {task.isEditing ? (
         <input
           type="text"
+          className="w-full h-full bg-transparent focus:outline-none text-base"
           autoFocus
           value={task.content}
           onChange={(e) => updateTask(task.id, {content: e.target.value })}
@@ -161,8 +169,8 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
         </p>
       )}
       {isHovering && (
-        <div className="controls">
-          <div className="resizeHandle" onMouseDown={startResize} />
+        <div className="absolute bottom-1 right-1 flex">
+          <div className="resizeHandle w-4 h-4 absolute bottom-1 right-1 bg-gray-400 rounded cursor-se-resize" onMouseDown={startResize} />
           </div>
       )}
     </div>
