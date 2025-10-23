@@ -16,22 +16,4 @@ export function calculateDelta(start: { x: number, y: number }, current: { x: nu
     return { dx: current.x - start.x, dy: current.y - start.y }
 }
 
-export function applyDelta(
-    position: { x: number; y: number }, 
-    dx: number, 
-    dy: number, 
-    options?: { clampTo?: { width: number; height: number }, gridSize?: number }
-){
-    let newX = position.x + dx;
-    let newY = position.y + dy;
-    if(options?.gridSize){
-        newX = Math.round(newX / options.gridSize) * options.gridSize;
-        newY = Math.round(newY / options.gridSize) * options.gridSize;
-    }
-    if(options?.clampTo){
-        newX = Math.max(0, Math.min(options.clampTo.width, newX));
-        newY = Math.max(0, Math.min(options.clampTo.height, newY))
-    }
-    return { x: newX, newY }
-}
 
