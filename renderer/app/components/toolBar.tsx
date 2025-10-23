@@ -1,48 +1,93 @@
-import React, { useState } from "react";
-import { TASK_COLOR_OPTIONS } from "../lib/constants";
-import { TiDelete } from "react-icons/ti";
+import React, { useState, useRef, useEffect } from "react";
+import { GoTrash } from "react-icons/go";
+import { IoDuplicateOutline } from "react-icons/io5";
+import ColorControls from "./colorControls";
 
 type Props = {
+  x: number;
+  y: number;
+  onMove: (position: { x: number; y: number }) => void;
+  currentColor: string;
   onDelete: () => void;
   onColorChange: (color: string) => void;
-  currentColor: string;
+  onDuplicate: () => void;
 }
 
 export default function ToolBar({
-  onDelete,
-  onColorChange,
+  x,
+  y,
+  onMove,
   currentColor,
+  onColorChange,
+  onDuplicate,
+  onDelete,
 } : Props) {
-  const [showColor, setShowColor] = useState(false);
+  const [position, setPosition] = useState({x,y});
+  const positionRef = useRef(position);
+  const dragStart = useRef<{ x: number, y: number } | null>(null);
+  const isDraggingRef = useRef(false);
+
+  const updatePosition = (newPos: { x: number; y: number }) => {
+    positionRef.current = newPos;
+    setPosition(newPos);
+  }
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+    isDraggingRef.current = true;
+  }
+  const handleMouseMove = (e: MouseEvent) => {
+    if(!isDraggingRef.current) return;
+    updatePosition({
+      x: e.clientX - (dragStart.current.x),
+      y: e.clientY - (dragStart.current.y)
+    });
+  };
+  const handleMouseUp = () => {
+    if(!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    onMove(positionRef.current)
+  };
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mousemove", handleMouseUp)
+    }
+  }, [])
 
   return (
-    <div className="toolBar flex gap-2 bg-white border rounded shadow p-1 absolute z-10">
-        <button className="deleteButton" onClick={onDelete}>
-            <TiDelete />
-        </button>        
-          
-        <button onClick={() => setShowColor((prev) => !prev)}>
-            <div
-              className="colorHandle w-5 h-5 rounded"
-              style={{ backgroundColor: currentColor }}
-              />
-        </button>
+    <div 
+      className="toolBar flex gap-2 bg-white border rounded shadow p-1 absolute z-10"
+      style={{
+        left: position.x,
+        top: position.y,
+      }}
+      onMouseDown={handleMouseDown}
+      >
+        <ColorControls
+          currentColor={currentColor}
+          onSelect={onColorChange}
+        />
 
-        {showColor && (
-        <div className="colorOptions flex gap-1 p-1 border bg-white absolute top-full left-0">
-        {TASK_COLOR_OPTIONS.map((color) => (
-            <div
-              key={color}
-              className="colorOption w-5 h-5 rounded cursor-pointer"
-              style={{ backgroundColor: color }}
-              onClick={() => {
-                onColorChange(color)
-                setShowColor(false)
-              }}
-            />
-        ))}
-        </div>
-        )}
+        <div className="w-px h-5 bg-gray-300 mx-1" />
+        
+        <button 
+          className="duplicateButton px-2 py-1 rounded border bg-white hover:bg-gray-100 focus:outline-none" 
+          onClick={onDuplicate}
+          aria-label="duplicate"
+        >
+            <IoDuplicateOutline />
+        </button>     
+        <button 
+          className="deleteButton bg-white hover:bg-gray-100" 
+          onClick={onDelete} 
+          aria-label="delete">
+            <GoTrash />
+        </button>     
 
     </div>
     )

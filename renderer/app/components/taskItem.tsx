@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Task } from "../lib/types";
-import { DEFAULT_TASK_SIZE, DRAG_THRESHOLD } from "../lib/constants";
+import { DEFAULT_TASK_SIZE } from "../lib/constants";
+import { exceedDragThreshold, calculateDelta } from "../lib/taskUtils";
 
 type TaskItemProps = {
   task: Task;
@@ -8,11 +9,19 @@ type TaskItemProps = {
   deleteTask: (id: string) => void;
 }
 
-export default function TaskItem({
-  task,
-  updateTask,
-  deleteTask
-} : TaskItemProps) {
+export type TaskItemHandle = {
+  getLatest: () => { x: number; y: number; width: number; height: number }
+}
+
+// export default function TaskItem({
+//   task,
+//   updateTask,
+//   deleteTask
+// } : TaskItemProps) {
+
+const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
+  task, updateTask, deleteTask
+}, ref) => {
   const [position, setPosition] = useState({ x: task.x, y: task.y });
   const [size, setSize] = useState({ width: task.width || DEFAULT_TASK_SIZE.width, height: task.height || DEFAULT_TASK_SIZE.height });
   const [isHovering, setIsHovering] = useState(false);
@@ -30,7 +39,7 @@ export default function TaskItem({
     isResizingRef.current = false;
     e.stopPropagation();
   };
-  
+
   const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     resizeStart.current = { x: e.clientX, y: e.clientY };
@@ -41,8 +50,7 @@ export default function TaskItem({
   const onMouseMove = (e: MouseEvent) => {
     e.preventDefault();
     if (resizeStart.current && isResizingRef.current) {
-      const dx = e.clientX - resizeStart.current.x;
-      const dy = e.clientY - resizeStart.current.y;
+      const { dx, dy } = calculateDelta(resizeStart.current, { x: e.clientX, y: e.clientY })
       setSize(prev => ({
         width: Math.max(DEFAULT_TASK_SIZE.width, prev.width + dx),
         height: Math.max(DEFAULT_TASK_SIZE.height, prev.height + dy),
@@ -52,9 +60,8 @@ export default function TaskItem({
     }
 
     if (!dragStart.current) return;
-    const dx = e.clientX - dragStart.current.x;
-    const dy = e.clientY - dragStart.current.y;
-    if (!isDraggingRef.current && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+    const { dx, dy } = calculateDelta(dragStart.current, { x: e.clientX, y: e.clientY })
+    if (!isDraggingRef.current && exceedDragThreshold(dx,dy)) {
       isDraggingRef.current = true;
       if(!isSelectedRef.current){
         updateTask(task.id, { isSelected:true });
@@ -111,6 +118,15 @@ export default function TaskItem({
     }
   };
 
+  React.useImperativeHandle(ref, () => ({
+    getLatest: () => ({
+      x: position.x,
+      y: position.y,
+      width: size.width,
+      height: size.height
+    })
+  }));
+
   return(
     <div
       className={`taskItem ${isDraggingRef.current ? "dragging" : ""} ${isResizingRef.current ? "resizing" : ""} ${isHovering ? "hovering" : ""} ${task.isSelected ? "selecting" : ""}`}
@@ -151,4 +167,6 @@ export default function TaskItem({
       )}
     </div>
   )
-}
+})
+
+export default TaskItem;

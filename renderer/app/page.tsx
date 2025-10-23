@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import ToolBar from "./components/toolBar";
-import TaskItem from "./components/taskItem";
+import TaskItem, { TaskItemHandle } from "./components/taskItem";
 import type { Task } from "./lib/types";
-import { DEFAULT_TASK_SIZE, TASK_COLOR_OPTIONS } from "./lib/constants";
+import { DEFAULT_TASK_SIZE, DEFAULT_COLOR_OPTIONS } from "./lib/constants";
 import { isOutside } from "./lib/taskUtils";
 
 export default function Page() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const taskRefs = useRef<{ [id:string]: TaskItemHandle }>({})
+  const [toolBarPos, setToolBarPos] = useState<{ x: number, y: number } | null>(null)
 
   const addTask = (x: number, y: number) => {
     const newTask: Task = {
@@ -18,11 +20,12 @@ export default function Page() {
       y,
       width: DEFAULT_TASK_SIZE.width,
       height: DEFAULT_TASK_SIZE.height,
-      backgroundColor: TASK_COLOR_OPTIONS[0],
+      backgroundColor: DEFAULT_COLOR_OPTIONS[0],
       isEditing: true,
       isSelected: true,
     };
     setTasks((prev) => [...prev, newTask]);
+    setToolBarPos({ x: x + DEFAULT_TASK_SIZE.width + 10, y })
   };
 
   const updateTask = (id:string, update:Partial<Task>) => {
@@ -53,14 +56,32 @@ export default function Page() {
     }
   };
 
-  const deleteSelected = () => {
-    setTasks((prev) => prev.filter((t) => !t.isSelected));
-  }
+
   const colorChangeSelected = (color: string) => {
     setTasks((prev) =>
       prev.map((t) => (t.isSelected ? { ...t, backgroundColor: color } : t))
     );
   };
+  const duplicateSelected = () => {
+    const now = Date.now();
+    const duplicates = selectedTasks.map((task, index) => {
+      const latest = taskRefs.current[task.id]?.getLatest() ?? task;
+      return {
+        ...task,
+        id: now + "_" + index,
+        x: latest.x + 20,
+        y: latest.y + 20,
+        width: latest.width,
+        height: latest.height,
+        isSelected:true,
+      }
+    });
+    setTasks(prev => [...prev, ...duplicates]);
+  };
+
+  const deleteSelected = () => {
+    setTasks((prev) => prev.filter((t) => !t.isSelected));
+  }
 
   const selectedTasks = tasks.filter((t) => t.isSelected);
 
@@ -73,17 +94,25 @@ export default function Page() {
       {tasks.map((task) => (
         <TaskItem
           key={task.id}
+          ref={el => {
+            if(el) taskRefs.current[task.id] = el;
+            else delete taskRefs.current[task.id];
+          }}
           task={task}
           updateTask={updateTask}
           deleteTask={deleteTask}
         />
       ))}
 
-      {selectedTasks.length > 0 && (
+      {selectedTasks.length > 0 && toolBarPos && (
         <ToolBar
-          onDelete={deleteSelected}
-          onColorChange={colorChangeSelected}
+          x={toolBarPos.x}
+          y={toolBarPos.y}
+          onMove={(newPos) => setToolBarPos(newPos)}
           currentColor={selectedTasks[0].backgroundColor}
+          onColorChange={colorChangeSelected}
+          onDuplicate={duplicateSelected}
+          onDelete={deleteSelected}
         />
       )}
     </div>
