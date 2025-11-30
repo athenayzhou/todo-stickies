@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import type { Task } from "../lib/types";
 import { DEFAULT_TASK_SIZE } from "../lib/constants";
 import { exceedDragThreshold, calculateDelta } from "../lib/taskUtils";
+import ResizeIcon from "./resizeIcon";
 
 type TaskItemProps = {
   task: Task;
@@ -40,7 +41,7 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
     e.stopPropagation();
   };
 
-  const startResize = (e: React.MouseEvent<HTMLDivElement>) => {
+  const startResize = (e: React.MouseEvent<SVGSVGElement>) => {
     e.stopPropagation();
     resizeStart.current = { x: e.clientX, y: e.clientY };
     isResizingRef.current = true;
@@ -132,7 +133,7 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
       className={`
         taskItem
         absolute p-2 rounded-lg shadow cursor-pointer select-none
-        ${task.isSelected ? "selecting" : ""}
+        ${task.isSelected ? "selecting border-2 border-red-500" : ""}
         ${isDraggingRef.current ? "dragging opacity-80" : ""} 
         ${isResizingRef.current ? "resizing" : ""} 
         ${isHovering ? "hovering ring-1 ring-gray-300" : ""} 
@@ -170,7 +171,8 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
       )}
       {isHovering && (
         <div className="absolute bottom-1 right-1 flex">
-          <div className="resizeHandle w-4 h-4 absolute bottom-1 right-1 bg-gray-400 rounded cursor-se-resize" onMouseDown={startResize} />
+          <ResizeIcon className=" resizeHandle cursor-se-resize" onMouseDown={startResize} />
+          {/* <div className="resizeHandle w-4 h-4 absolute bottom-1 right-1 bg-gray-400 rounded cursor-se-resize" onMouseDown={startResize} /> */}
           </div>
       )}
     </div>

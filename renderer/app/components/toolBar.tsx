@@ -61,7 +61,7 @@ export default function ToolBar({
 
   return (
     <div 
-      className="toolBar flex items-center gap-18 p-2 bg-white border rounded shadow-lg absolute z-10 cursor-pointer min-w-[300px]"
+      className="toolBar flex items-center gap-1 p-2 bg-white border rounded-[5rem] shadow-lg absolute z-10 cursor-pointer min-w-[300px]"
       style={{
         left: position.x,
         top: position.y,
@@ -73,20 +73,20 @@ export default function ToolBar({
           onSelect={onColorChange}
         />
 
-        <div className="w-px h-6 bg-gray-300 mx-2" />
+        <div className="w-[1px] h-4 bg-gray-300 mx-2" />
         
         <button 
-          className="duplicateButton px-2 py-1 border rounded hover:bg-gray-100 focus:outline-none" 
+          className="duplicateButton px-2 py-1 hover:bg-gray-100 focus:outline-none" 
           onClick={onDuplicate}
           aria-label="duplicate"
         >
-            <IoDuplicateOutline />
+            <IoDuplicateOutline size={25} />
         </button>     
         <button 
-          className="deleteButton px-2 py-1 border rounded hover:bg-gray-100 focus:outline-none" 
+          className="deleteButton px-2 py-1 hover:bg-gray-100 focus:outline-none" 
           onClick={onDelete} 
           aria-label="delete">
-            <GoTrash />
+            <GoTrash size={25} />
         </button>     
 
     </div>
