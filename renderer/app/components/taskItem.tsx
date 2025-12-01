@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Task } from "../lib/types";
-import { DEFAULT_TASK_SIZE } from "../lib/constants";
+import { ACTIVE_COLOR_PRIMARY, DEFAULT_TASK_SIZE } from "../lib/constants";
 import { exceedDragThreshold, calculateDelta } from "../lib/taskUtils";
 import ResizeIcon from "./resizeIcon";
 
@@ -133,10 +133,10 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
       className={`
         taskItem
         absolute p-2 rounded-lg shadow cursor-pointer select-none
-        ${task.isSelected ? "selecting border-2 border-red-500" : ""}
+        // ${task.isSelected ? "selecting border-2 border-red-500" : ""}
         ${isDraggingRef.current ? "dragging opacity-80" : ""} 
         ${isResizingRef.current ? "resizing" : ""} 
-        ${isHovering ? "hovering ring-1 ring-gray-300" : ""} 
+        // ${isHovering ? "hovering ring-1 ring-gray-300" : ""} 
         `}
       style={{
         left: position.x,
@@ -144,6 +144,10 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
         width: size.width,
         height: size.height,
         backgroundColor: task.backgroundColor,
+        zIndex: task.layer,
+        borderWidth: task.isSelected ? 1 : 0,
+        borderColor: task.isSelected ? ACTIVE_COLOR_PRIMARY : "#F3F4F6", //hex equiv to tailwind gray-100
+        boxShadow: isHovering ? "0 0 0 1px #F3F4F6" : undefined,
       }}
       onMouseDown={startDrag}
       onMouseEnter={() => setIsHovering(true)}
