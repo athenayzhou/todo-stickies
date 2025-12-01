@@ -61,7 +61,7 @@ export default function ColorControls({
                 `}
                 style={{ 
                   backgroundColor: color,
-                  borderColor: currentColor === color ? ACTIVE_COLOR_PRIMARY : "#d1d5db",
+                  borderColor: currentColor === color ? INACTIVE_COLOR : "#d1d5db",
                   borderWidth: currentColor === color ? 2 : 1,
                 }}
                 aria-label={`select color ${color}`}

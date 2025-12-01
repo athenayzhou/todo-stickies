@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { Task } from "../lib/types";
-import { ACTIVE_COLOR_PRIMARY, DEFAULT_TASK_SIZE } from "../lib/constants";
+import { ACTIVE_COLOR_PRIMARY, DEFAULT_TASK_SIZE, INACTIVE_COLOR } from "../lib/constants";
 import { exceedDragThreshold, calculateDelta } from "../lib/taskUtils";
 import ResizeIcon from "./resizeIcon";
 
@@ -32,6 +32,15 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
   const isResizingRef = useRef(false);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
   const resizeStart = useRef<{ x: number; y: number } | null>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if(textareaRef.current){
+      const length = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(length,length);
+      textareaRef.current.focus();
+    }
+  },[]);
 
   const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
     if(task.isEditing) return;
@@ -132,11 +141,9 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
     <div
       className={`
         taskItem
-        absolute p-2 rounded-lg shadow cursor-pointer select-none
-        // ${task.isSelected ? "selecting border-2 border-red-500" : ""}
+        absolute pl-5 pr-4 pt-6 pb-9 rounded-lg shadow cursor-pointer select-none
         ${isDraggingRef.current ? "dragging opacity-80" : ""} 
         ${isResizingRef.current ? "resizing" : ""} 
-        // ${isHovering ? "hovering ring-1 ring-gray-300" : ""} 
         `}
       style={{
         left: position.x,
@@ -145,38 +152,48 @@ const TaskItem = React.forwardRef<TaskItemHandle, TaskItemProps>(({
         height: size.height,
         backgroundColor: task.backgroundColor,
         zIndex: task.layer,
-        borderWidth: task.isSelected ? 1 : 0,
-        borderColor: task.isSelected ? ACTIVE_COLOR_PRIMARY : "#F3F4F6", //hex equiv to tailwind gray-100
+        borderWidth: task.isSelected ? 2 : 0,
+        borderColor: task.isSelected ? INACTIVE_COLOR : "#F3F4F6", //hex equiv to tailwind gray-100
         boxShadow: isHovering ? "0 0 0 1px #F3F4F6" : undefined,
       }}
       onMouseDown={startDrag}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
+      onDoubleClick = {()=> updateTask(task.id, { isEditing: true, isSelected:true })}
     >
       {task.isEditing ? (
-        <input
-          type="text"
-          className="w-full h-full bg-transparent focus:outline-none text-base"
-          autoFocus
+        <textarea
+          ref={textareaRef}
+          className="task-textarea w-full h-full bg-transparent focus:outline-none text-base resize-none"
+          style={{
+            fontSize: "inherit",
+            overflow: "auto",
+            whiteSpace: "pre-wrap"
+          }}
           value={task.content}
           onChange={(e) => updateTask(task.id, {content: e.target.value })}
           onBlur={handleBlur}
-          onKeyDown={(e) => {
-            if(e.key === 'Enter'){
-              e.preventDefault();
-              handleBlur();
-            }
-          }}
+          // onKeyDown={(e) => {
+          //   if(e.key === 'Enter'){
+          //     e.preventDefault();
+          //     handleBlur();
+          //   }
+          // }}
         />
       ) : (
-        <p onDoubleClick = {()=> updateTask(task.id, { isEditing: true, isSelected:true })}>
+        <div
+          className="w-full h-full whitespace-pre-wrap"
+          style={{
+            overflow: "auto",
+            lineHeight: "1.5"
+          }}
+        >
           {task.content}
-        </p>
+        </div>
       )}
       {isHovering && (
         <div className="absolute bottom-1 right-1 flex">
-          <ResizeIcon className=" resizeHandle cursor-se-resize" onMouseDown={startResize} />
-          {/* <div className="resizeHandle w-4 h-4 absolute bottom-1 right-1 bg-gray-400 rounded cursor-se-resize" onMouseDown={startResize} /> */}
+          <ResizeIcon className="resizeHandle cursor-se-resize" onMouseDown={startResize} />
           </div>
       )}
     </div>

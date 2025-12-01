@@ -11,6 +11,31 @@ html, body, #__next {
   margin: 0;
 }
 
+.task-textarea::-webkit-scrollbar { width: 8px; }
+.task-textarea::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 4px; }
+.task-textarea::-webkit-scrollbar-thumb { background-color: #a0a0a0; border-radius: 4px; border: 2px solid #f0f0f0; }
+.task-textarea::-webkit-scrollbar-thumb:hover { background-color: #888888; }
+
+textarea::-webkit-scrollbar {
+  width: 8px;          /* width of vertical scrollbar */
+  height: 8px;         /* height of horizontal scrollbar */
+}
+
+textarea::-webkit-scrollbar-track {
+  background: #f0f0f0; /* track background */
+  border-radius: 4px;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background-color: #a0a0a0; /* scrollbar thumb */
+  border-radius: 4px;
+  border: 2px solid #f0f0f0; /* optional: space around thumb */
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+  background-color: #888888; /* hover state */
+}
+
 /* .canvas {
     position: relative;
     width: 100%;
